@@ -8,107 +8,34 @@ import Logo from './components/Logo/Logo';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Rank from './components/Rank/Rank';
 import Particles from "react-tsparticles";
-import Clarifai from 'clarifai';
+// import Clarifai from 'clarifai';
+import particlesOptions from './particlesOptions'
 
-const app = new Clarifai.App({
-  apiKey: 'b94ed38e5581485993d2a6a6e811bbf7'
-});
+// const app = new Clarifai.App({
+//   apiKey: 'b94ed38e5581485993d2a6a6e811bbf7'
+// });
 
-const particlesOptions = {
-  fps_limit: 60,
-  interactivity: {
-    detect_on: "canvas",
-    events: {
-      onclick: { enable: true, mode: "push" },
-      onhover: {
-        enable: true,
-        mode: "attract",
-        parallax: { enable: false, force: 60, smooth: 10 }
-      },
-      resize: true
-    },
-    modes: {
-      push: { quantity: 4 },
-      attract: { distance: 200, duration: 0.4, factor: 5 }
-    }
-  },
-  particles: {
-    color: { value: "#ffffff" },
-    line_linked: {
-      color: "#ffffff",
-      distance: 150,
-      enable: true,
-      opacity: 0.4,
-      width: 1
-    },
-    move: {
-      attract: { enable: false, rotateX: 600, rotateY: 1200 },
-      bounce: false,
-      direction: "none",
-      enable: true,
-      out_mode: "out",
-      random: false,
-      speed: 2,
-      straight: false
-    },
-    number: { density: { enable: true, value_area: 800 }, value: 80 },
-    opacity: {
-      anim: { enable: false, opacity_min: 0.1, speed: 1, sync: false },
-      random: false,
-      value: 0.5
-    },
-    shape: {
-      character: {
-        fill: false,
-        font: "Verdana",
-        style: "",
-        value: "*",
-        weight: "400"
-      },
-      image: {
-        height: 100,
-        replace_color: true,
-        src: "images/github.svg",
-        width: 100
-      },
-      polygon: { nb_sides: 5 },
-      stroke: { color: "#000000", width: 0 },
-      type: "circle"
-    },
-    size: {
-      anim: { enable: false, size_min: 0.1, speed: 40, sync: false },
-      random: true,
-      value: 5
-    }
-  },
-  polygon: {
-    draw: { enable: false, lineColor: "#ffffff", lineWidth: 0.5 },
-    move: { radius: 10 },
-    scale: 1,
-    type: "none",
-    url: ""
-  },
-  retina_detect: true
+const initalState = {
+  input: '',
+  imageUrl: '',
+  box: [],
+  // box: {},
+  route: 'signin',
+  isSignedIn: false,
+  user: {
+    id: '',
+    name: '',
+    email: '',
+    entries: 0,
+    joined: ''
+  }
 }
 
 class App extends Component {
   constructor() {
     super();
-    this.state = {
-      input: '',
-      imageUrl: '',
-      box: [],
-      // box: {},
-      route: 'signin',
-      isSignedIn: false,
-      user: {
-        id: '',
-        name: '',
-        email: '',
-        entries: 0,
-        joined: ''
-      }
-    }
+    this.state = initalState
+    
   }
 
   loadUser = (data) => {
@@ -169,6 +96,34 @@ class App extends Component {
 
   onButtonSubmit = () => {
     this.setState({imageUrl: this.state.input});
+    fetch('https://face-finder-api.herokuapp.com/imageurl', {
+      method: 'post',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        imageURL: this.state.input,
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Adnan' , data)
+      if (data) {
+        fetch('https://face-finder-api.herokuapp.com/image', {
+          method: 'put',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            id: this.state.user.id
+          })
+        })
+        .then(response => response.json())
+        .then(count => {
+          this.setState(Object.assign(this.state.user, { entries: count}))
+        })
+        .catch(console.log)
+      }
+      this.displayFaceBox(this.calculateFaceLocation(data))
+    })
+    .catch(err => console.log(err));
+    /*
     app.models
       .predict(
         // HEADS UP! Sometimes the Clarifai Models can be down or not working as they are constantly getting updated.
@@ -196,16 +151,18 @@ class App extends Component {
             .then(count => {
               this.setState(Object.assign(this.state.user, { entries: count}))
             })
+            .catch(console.log)
 
         }
         this.displayFaceBox(this.calculateFaceLocation(response))
       })
-      .catch(err => console.log(err));
+    .catch(err => console.log(err));
+    */
   }
 
   onRouteChange = (route) => {
     if (route === 'signout') {
-      this.setState({isSignedIn: false})
+      this.setState(initalState)
     } else if (route === 'home') {
       this.setState({isSignedIn: true})
     }

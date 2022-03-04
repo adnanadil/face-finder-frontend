@@ -23,7 +23,7 @@ class Register extends React.Component {
   }
 
   onSubmitSignIn = () => {
-    fetch('http://localhost:3000/register', {
+    fetch('https://face-finder-api.herokuapp.com/register', {
       method: 'post',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -32,13 +32,14 @@ class Register extends React.Component {
         name: this.state.name
       })
     })
-      .then(response => response.json())
-      .then(user => {
-        if (user) {
-          this.props.loadUser(user)
-          this.props.onRouteChange('home');
-        }
-      })
+    .then(response => response.json())
+    .then(user => {
+      if (user.id) {
+        this.props.loadUser(user)
+        this.props.onRouteChange('home');
+        console.log(`this is the user that we are getting Adds: ${user}`)
+      }
+    }).catch(err => console.log(err))
   }
 
   render() {
